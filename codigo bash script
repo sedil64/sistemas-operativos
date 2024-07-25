@@ -1,0 +1,94 @@
+#!/bin/bash
+
+eleccion_computadora() {
+  opciones=("piedra" "papel" "tijera")
+  eleccion_computadora=${opciones[$RANDOM % 3]}
+  echo $eleccion_computadora
+}
+
+buscar_ganador() {
+  echo "Por favor ingresa el nombre del ganador a buscar:"
+  read nombre_ganador
+  echo "Buscando el nombre $nombre_ganador en la lista de ganadores..."
+  if grep -q "$nombre_ganador" ganadores.txt; then
+    echo "Ganador encontrado. Comentando la línea..."
+    sed -i "/$nombre_ganador/s/^/# /" ganadores.txt
+    echo "Línea comentada con éxito."
+  else
+    echo "Ganador no encontrado en la lista."
+  fi
+}
+
+determinar_ganador() {
+  if [ "$1" == "$2" ]; then
+    echo "Empate"
+  elif [ "$1" == "piedra" ] && [ "$2" == "tijera" ]; then
+    echo "$3"
+  elif [ "$1" == "papel" ] && [ "$2" == "piedra" ]; then
+    echo "$3"
+  elif [ "$1" == "tijera" ] && [ "$2" == "papel" ]; then
+    echo "$3"
+  else
+    echo "la computadora"
+  fi
+}
+
+jugar() {
+  echo "¡Bienvenido al juego de Piedra, Papel o Tijera!"
+  echo "Por favor ingresa tu nombre:"
+  read nombre_usuario
+  echo "---------------------------------------------------------------------------"
+  echo "Hola $nombre_usuario, gracias por jugar, lee las instrucciones por favor"
+
+  echo "Por favor elige entre piedra, papel o tijera"
+  read eleccion_usuario
+  echo "---------------------------------------------------------------------------"
+  echo "Tu has elegido $eleccion_usuario"
+  eleccion_final=$(echo $eleccion_usuario | tr '[:upper:]' '[:lower:]')
+
+  eleccion_computadora=$(eleccion_computadora)
+  echo "La computadora eligió: $eleccion_computadora"
+
+  ganador=$(determinar_ganador "$eleccion_final" "$eleccion_computadora" "$nombre_usuario")
+  echo "El ganador es: $ganador"
+  echo "Graciar por jugar, puedes consultar la lista de ganadores"
+  echo "---------------------------------------------------------------------------"
+
+  if [ "$ganador" != "Empate" ]; then
+          echo "El ganador de esta partida fue: $ganador en la fecha: $(date)$(hostname -I) " >> ganadores.txt
+
+  fi
+}
+menu() {
+  echo "---------------------------------------------------------------------------"
+  echo "Bienvenido al Menú. Por favor elige una de las opciones"
+  echo "1. Jugar a Piedra, Papel o Tijera contra la computadora"
+  echo "2. Visualizar la lista de ganadores"
+  echo "3. Reiniciar la lista de ganadores"
+  echo "4. Restaurar la lista de ganadores"
+  echo "5. Buscar y comentar un ganador"
+  echo "---------------------------------------------------------------------------"
+  read opcion_usuario
+  echo "Ha seleccionado la opción: $opcion_usuario"
+  echo "---------------------------------------------------------------------------"
+
+  if [ "$opcion_usuario" -eq 1 ]; then
+    jugar
+  elif [ "$opcion_usuario" -eq 2 ]; then
+    base64 -d ganadores.txt
+  elif [ "$opcion_usuario" -eq 3 ]; then
+    rm ganadores.txt
+    echo "La lista de ganadores ha sido eliminada"
+  elif [ "$opcion_usuario" -eq 4 ]; then
+    cp .ganadores_respaldo.txt ganadores_mid.txt
+    base64 ganadores_mid.txt >> ganadores.txt
+    rm ganadores_mid.txt
+    echo "La lista ha sido restaurada con éxito"
+  elif [ "$opcion_usuario" -eq 5 ]; then
+    buscar_ganador
+  else
+    echo "Opción no válida, por favor intenta nuevamente"
+  fi
+}
+
+menu
